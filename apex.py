@@ -9,16 +9,16 @@ model = torch.hub.load('C:/Users/H.Huang/yolov5', 'custom', path='C:/Users/H.Hua
 
 
 def modifier(distance):
-    return 1 + 0.42 * pow(distance, 0.35)
+    return 1.3 + 0.42 * pow(distance, 0.35)
 
 
 def smooth_move(diffX, diffY):
     stepX, stepY = int(diffX / 50), int(diffY / 50)
-    smooth_start = time.time()
+    # smooth_start = time.time()
     for _ in range(50):
         win32api.mouse_event(0x001, stepX, stepY)
-    smooth_time = time.time() - smooth_start
-    print("SMO %.6f " % smooth_time)
+    # smooth_time = time.time() - smooth_start
+    # print("SMO %.6f " % smooth_time)
 
 
 with mss.mss() as sct:
@@ -43,8 +43,8 @@ with mss.mss() as sct:
 
     while True:
         if win32api.GetAsyncKeyState(0x02):
-            if win32api.GetAsyncKeyState(0x01):
-                start_time = time.time()
+            if win32api.GetAsyncKeyState(1):
+                # start_time = time.time()
                 sct_img = sct.grab(monitor)
 
                 # mss.tools.to_png(sct_img.rgb, sct_img.size, output=output)
@@ -52,11 +52,11 @@ with mss.mss() as sct:
 
                 BRGFrame = np.array(sct_img)
                 RGBFrame = BRGFrame[:, :, [2, 1, 0]]
-                capture_time = time.time() - start_time
+                # capture_time = time.time() - start_time
 
-                infer_time = time.time()
-                results = model(RGBFrame, size=320)
-                infer_end = time.time()
+                # infer_time = time.time()
+                results = model(RGBFrame, size=640)
+                # infer_end = time.time()
                 model.conf = 0.8
 
                 enemyNum = results.xyxy[0].shape[0]
@@ -93,14 +93,14 @@ with mss.mss() as sct:
 
                     diffX = int(MODIFIER * (Xtarget - SQUARE_SIZE / 2))
                     diffY = int(MODIFIER * (Ytarget - SQUARE_SIZE / 2))
-                    calculate_time = time.time() - infer_end
+                    # calculate_time = time.time() - infer_end
                     if(distance >= 50):
                         smooth_move(diffX, diffY)
                     else:
                         win32api.mouse_event(0x001, diffX, diffY)
 
-                    print("--- %.3f seconds ---" % (time.time() - start_time))
-                    print("CAP %.3f " % capture_time +
-                          "INF %.3f " % (infer_end - infer_time) +
-                          "CAL %.3f " % calculate_time +
-                          "MOV %0.3f" % (time.time() - start_time - capture_time - infer_end + infer_time - calculate_time))
+                    # print("--- %.3f seconds ---" % (time.time() - start_time))
+                    # print("CAP %.3f " % capture_time +
+                    #       "INF %.3f " % (infer_end - infer_time) +
+                    #       "CAL %.3f " % calculate_time +
+                    #       "MOV %0.3f" % (time.time() - start_time - capture_time - infer_end + infer_time - calculate_time))
