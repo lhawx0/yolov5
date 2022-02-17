@@ -5,11 +5,16 @@ import numpy as np
 import torch
 import time
 import win32api
-model = torch.hub.load('C:/Users/H.Huang/yolov5', 'custom', path='C:/Users/H.Huang/yolov5/ballsv2.pt', source='local')
+import cv2
+
+# KVK
+# model = torch.hub.load('C:/Users/H.Huang/yolov5', 'custom', path='C:/Users/H.Huang/yolov5/ballsv2.pt', source='local')
+# apex
+model = torch.hub.load('C:/Users/H.Huang/yolov5', 'custom', path='C:/Users/H.Huang/yolov5/apexSt1.pt', source='local')
 
 
 def modifier(distance):
-    return 1.3 + 0.42 * pow(distance, 0.35)
+    return 1.8 + 0.42 * pow(distance, 0.35)
 
 
 def smooth_move(diffX, diffY):
@@ -27,7 +32,7 @@ with mss.mss() as sct:
 
     dimensions = sct.monitors[1]
 
-    SQUARE_SIZE = 640
+    SQUARE_SIZE = 416
 
     # Part of the screen to capture
 
@@ -43,8 +48,8 @@ with mss.mss() as sct:
 
     while True:
         if win32api.GetAsyncKeyState(0x02):
-            if win32api.GetAsyncKeyState(1):
-                # start_time = time.time()
+            if win32api.GetAsyncKeyState(0x01):
+                start_time = time.time()
                 sct_img = sct.grab(monitor)
 
                 # mss.tools.to_png(sct_img.rgb, sct_img.size, output=output)
@@ -52,15 +57,20 @@ with mss.mss() as sct:
 
                 BRGFrame = np.array(sct_img)
                 RGBFrame = BRGFrame[:, :, [2, 1, 0]]
-                # capture_time = time.time() - start_time
+                capture_time = time.time() - start_time
 
-                # infer_time = time.time()
+                infer_time = time.time()
                 results = model(RGBFrame, size=640)
-                # infer_end = time.time()
+                infer_end = time.time()
                 model.conf = 0.8
-
+                # results.render()
+                # cv2.imshow('debug', results.imgs[0])
                 enemyNum = results.xyxy[0].shape[0]
+                # if cv2.waitKey(1) & 0xFF == ord("q"):
 
+                #     cv2.destroyAllWindows()
+
+                #     sct.close()
                 if enemyNum == 0:
                     pass
                 else:
@@ -89,18 +99,20 @@ with mss.mss() as sct:
                     Xtarget = (x2 - x1) / 2 + x1
                     Ytarget = (y2 - y1) / 2 + y1
 
+                    Ytarget -= 0.3 * (y2 - y1)
+
                     MODIFIER = modifier(distance)
 
                     diffX = int(MODIFIER * (Xtarget - SQUARE_SIZE / 2))
                     diffY = int(MODIFIER * (Ytarget - SQUARE_SIZE / 2))
-                    # calculate_time = time.time() - infer_end
+                    calculate_time = time.time() - infer_end
                     if(distance >= 50):
                         smooth_move(diffX, diffY)
                     else:
                         win32api.mouse_event(0x001, diffX, diffY)
 
-                    # print("--- %.3f seconds ---" % (time.time() - start_time))
-                    # print("CAP %.3f " % capture_time +
-                    #       "INF %.3f " % (infer_end - infer_time) +
-                    #       "CAL %.3f " % calculate_time +
-                    #       "MOV %0.3f" % (time.time() - start_time - capture_time - infer_end + infer_time - calculate_time))
+                    print("--- %.3f seconds ---" % (time.time() - start_time))
+                    print("CAP %.3f " % capture_time +
+                          "INF %.3f " % (infer_end - infer_time) +
+                          "CAL %.3f " % calculate_time +
+                          "MOV %0.3f" % (time.time() - start_time - capture_time - infer_end + infer_time - calculate_time))
